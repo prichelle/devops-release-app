@@ -1,0 +1,118 @@
+def label = "mypod-${UUID.randomUUID().toString()}"
+
+//default imTagId this id will be added in the k8s name
+//the value corresponds to the tag id used to tag the image in the registry
+//current implementation is to use the commit id
+//app name will be used to define the k8s name. Value will be set from the helm chart 
+def imName = "mycluster.icp:8500/demo/demoapp"
+def imTagId = "001"
+def appName = "demoapp"
+
+
+//docker registry
+def registryHost = "mycluster.icp:8500";
+
+//color label and env that has to be set. Default is GREEN but adapted in function of the current deployment
+//If current deployment is GREEN the value will be set to BLUE
+def appColor = "GREEN"
+//current deployement color.
+def currAppColor = "BLUE"
+
+//namespace where the deployemnt shoudl occurs.
+//namespace should be set when deploying the application
+def namespace = "demoapp-prod"
+
+// ingress name will be set of the application name ?
+def ingressName = "mysampleapp".toLowerCase()
+
+podTemplate(label: label, cloud: 'ICP', containers: [
+  containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'helm', image: 'lachlanevenson/k8s-helm:v2.12.3', command: 'cat', ttyEnabled: true)
+], 
+volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcert')
+]) {
+    node(label) {
+        checkout scm
+        try{
+            stage ('initialize'){
+                def userInput = input(
+                    id: 'userInput', message: 'rollback release?', parameters: [
+                    [$class: 'TextParameterDefinition', defaultValue: 'demoapp', description: 'application name', name: 'name'],
+                    [$class: 'TextParameterDefinition', defaultValue: '0.4.1', description: 'Deployed release', name: 'tag']
+                    ]
+                )
+
+                imTagId = userInput['tag']
+                echo "image tag id: ${imTagId}" 
+
+                appName = userInput['name']
+
+                echo "rolling back to application ${appName} version ${imTagId}" 
+
+                namespace = "${appName}-prod"
+
+            }
+        }  catch(exe)
+        {
+            echo "${exe}"
+            error("[FAILURE] Failed to initialize")
+        }
+
+        try{
+            rollbackToPrevious( namespace,  imTagId,  appName)
+        } catch(exe) {
+            echo "${exe}"
+            error("[FAILURE] Failed to update")
+           
+        }
+   }
+}
+
+
+def rollbackToPrevious(String namespace, String imTagId, String appName){
+   stage ('rollback'){
+
+        container ('kubectl') {
+
+            def cleanTag = imTagId.replaceAll('\\.','')
+
+            svcIdtoRollback = sh (
+                            script: "kubectl get svc -n ${namespace} -l instance=${appName}-internal | awk 'FNR==2{print \$1}'",
+                            returnStdout: true
+                        ).trim()
+
+            if (svcIdtoRollback){
+
+                //checking that the service is not exposed
+                appSelector = sh (
+                                    script: "kubectl get svc -n ${namespace} ${svcIdtoRollback} -o jsonpath=\"{.spec.selector.instance-release}\"",
+                                    returnStdout: true
+                                ).trim()
+
+                def cleanTag = imTagId.replaceAll('\\.','')
+                def appRelease = ${appName}-${cleanTag}
+                if (appSelector != appRelease ) {
+                    //rollbacl old deployment
+
+                    sh "sed -i 's|APP_NAME|${appName}|g' service.yaml"
+
+                    sh "cat service.yaml"
+
+                    sh "sed -i 's|APPSELECTOR|${appRelease}|g' service.yaml"
+                    sh "kubectl apply -f service.yaml -n ${namespace}"
+
+                    echo "service ${appName}-internal updated"
+        
+                }else{
+                    echo("backend ${appRelease} is already exposed")
+                }
+            }else{
+                error("[FAILURE] application ${appName}-${cleanTag}-${namespace} not exposed through a service no service available ")
+            }
+        }
+
+        
+    }
+
+}
+

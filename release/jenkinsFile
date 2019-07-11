@@ -1,0 +1,152 @@
+def label = "mypod-${UUID.randomUUID().toString()}"
+
+//default imTagId this id will be added in the k8s name
+//the value corresponds to the tag id used to tag the image in the registry
+//current implementation is to use the commit id
+//app name will be used to define the k8s name. Value will be set from the helm chart 
+def imName = "mycluster.icp:8500/demo/devops-demo-backend"
+def imTagId = "001"
+def appName = "demoapp"
+def imNs = "demo"
+
+
+//docker registry
+def registryHost = "mycluster.icp:8500";
+
+//color label and env that has to be set. Default is GREEN but adapted in function of the current deployment
+//If current deployment is GREEN the value will be set to BLUE
+def appColor = "PROD"
+
+
+//namespace where the deployemnt shoudl occurs.
+//namespace should be set when deploying the application
+def namespace = "demoapp-prod"
+
+// ingress name will be set of the application name ?
+def ingressName = "mysampleapp".toLowerCase()
+
+podTemplate(label: label, cloud: 'ICP', containers: [
+  containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'helm', image: 'lachlanevenson/k8s-helm:v2.12.3', command: 'cat', ttyEnabled: true)
+], 
+volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcert')
+]) {
+    node(label) {
+        checkout scm
+        try{
+            stage ('initialize'){
+                def userInput = input(
+                    id: 'userInput', message: 'Let\'s release?', parameters: [
+                    [$class: 'TextParameterDefinition', defaultValue: 'demo/demoapp', description: 'Image to release', name: 'image'],
+                    [$class: 'TextParameterDefinition', defaultValue: '0.4.1', description: 'Image tag', name: 'tag']
+                    ]
+                )
+
+                imTagId = userInput['tag']
+                echo "image tag id: ${imTagId}" 
+                imName = "mycluster.icp:8500/" + userInput['image']
+                //echo "override image tag id to 0.4 to test"
+                //imTagId = "0.4.2" //v2
+
+                appName = sh (
+                                    script: "basename ${imName}",
+                                    returnStdout: true
+                                ).trim()
+
+                echo "deploying image ${imName} as application ${appName}" 
+
+                echo "getting Ingress information"
+
+                namespace = "${appName}-prod"
+
+                echo "application will be deployed in namespace ${namespace}"
+
+            }
+        }  catch(exe)
+        {
+            echo "${exe}"
+            error("[FAILURE] Failed to initialize")
+        }
+
+        try{
+            deployincluster(imName, namespace, appName, imTagId, appColor)
+        } catch(exe) {
+            echo "${exe}"
+            error("[FAILURE] Failed to deploy")
+           
+        }
+         try{
+            updateSVC( namespace,  imTagId, appName)
+        } catch(exe) {
+            echo "${exe}"
+            error("[FAILURE] Failed to update")
+           
+        }
+   }
+}
+
+
+def deployincluster(String imName, String namespace, String appName, String imTagId, String appColor){
+    
+    stage ('deploy'){
+
+        //echo "getting the current service name"
+        //kubectl get ingress -n labs helloapp -o jsonpath="{.spec.rules[*].http.paths[*].backend.serviceName}"
+        echo 'deploying using helm'
+        echo "setting image name to ${imName}" 
+        sh "sed -i 's|IM_URI|${imName}|g' ./helm/values.yaml" 
+
+        echo "setting image tag to ${imTagId}"
+        sh "sed -i 's|IM_TAG|${imTagId}|g' ./helm/values.yaml"
+
+        echo "setting app color to ${appColor}" 
+        sh "sed -i 's|APP_COLOR|${appColor}|g' ./helm/values.yaml"
+        // sh "sed -i back 's|APP_PORT|${appPort}|g' ./helm/values.yaml"
+       
+       container ('kubectl'){
+            echo "check that namespace ${namespace} exists"
+            currentNsName = sh (
+                        script: "kubectl get ns | grep ${namespace} | awk '{print \$1}'",
+                        returnStdout: true
+                    ).trim()
+            if (currentNsName == null){
+                echo "creating namespace ${namespace}"
+                sh "kubectl create ns ${namespace}"
+                sh "kubectl create rolebinding -n ${namespace} --clusterrole=ibm-anyuid-clusterrole --group=system:serviceaccounts:${namespace} ibm-anyuid-clusterrole-rolebinding"
+            }
+        }
+        
+        container('helm'){
+            sh "cat ./helm/values.yaml"
+            def cleanTag = imTagId.replaceAll('\\.','')
+            echo "installing application with helm: ${appName}-${cleanTag} in namespace ${namespace}"
+            sh "helm install --name=${appName}-${cleanTag}-${namespace} --namespace=${namespace} --tls ./helm"
+            sh "helm list --tls | grep ${appName}"
+        }
+    }
+}
+
+def updateSVC(String namespace, String imTagId, String appName){
+
+    stage ('updateSVC'){
+
+        container ('kubectl') {
+            echo "initializing service yaml file"   
+
+
+            echo "service in namespace ${namespace}: ${appName}-internal will be updated for version ${imTagId}"
+
+            sh "sed -i 's|APP_NAME|${appName}|g' service.yaml"
+
+            sh "cat service.yaml"
+
+            def cleanTag = imTagId.replaceAll('\\.','')
+
+            sh "sed -i 's|APPSELECTOR|${appName}-${cleanTag}|g' service.yaml"
+            sh "kubectl apply -f service.yaml -n ${namespace}"
+
+            echo "service ${appName}-internal updated"
+            //TODO remove previous deployment
+        }
+    }
+}
