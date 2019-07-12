@@ -38,7 +38,7 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
                 def userInput = input(
                     id: 'userInput', message: 'Let\'s release?', parameters: [
                     [$class: 'TextParameterDefinition', defaultValue: 'demo/devops-demo-backend', description: 'Image to release', name: 'image'],
-                    [$class: 'TextParameterDefinition', defaultValue: '0.2', description: 'Image tag', name: 'tag']
+                    [$class: 'TextParameterDefinition', defaultValue: '1.0', description: 'Image tag', name: 'tag']
                     ]
                 )
 
@@ -54,10 +54,6 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
                                 ).trim()
 
                 echo "deploying image ${imName} as application ${appName}" 
-
-                echo "getting Ingress information"
-
-                //namespace = "${appName}-prod"
 
                 echo "application will be deployed in namespace ${namespace}"
 
@@ -139,9 +135,7 @@ def updateSVC(String namespace, String imTagId, String appName){
             sh "sed -i 's|APP_NAME|${appName}|g' service.yaml"
 
  
-            def cleanTag = imTagId.replaceAll('\\.','')
-
-            sh "sed -i 's|APPSELECTOR|${appName}-${cleanTag}|g' service.yaml"
+            sh "sed -i 's|APPSELECTOR|${appName}-${imTagId}|g' service.yaml"
             sh "kubectl apply -f service.yaml -n ${namespace}"
 
             sh "cat service.yaml"
