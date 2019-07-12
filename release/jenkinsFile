@@ -37,8 +37,8 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
             stage ('initialize'){
                 def userInput = input(
                     id: 'userInput', message: 'Let\'s release?', parameters: [
-                    [$class: 'TextParameterDefinition', defaultValue: 'demo/demoapp', description: 'Image to release', name: 'image'],
-                    [$class: 'TextParameterDefinition', defaultValue: '0.4.1', description: 'Image tag', name: 'tag']
+                    [$class: 'TextParameterDefinition', defaultValue: 'demo/devops-demo-backend', description: 'Image to release', name: 'image'],
+                    [$class: 'TextParameterDefinition', defaultValue: '0.2', description: 'Image tag', name: 'tag']
                     ]
                 )
 

@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       name: {{ include "demo-app.name" . }}
-      instance-release: {{ .Release.Name }}
+      instance-release: "{{ .Chart.Name }}-{{ .Values.image.tag}}"
       color: {{ .Values.labels.appcolor}}
   template:
     metadata:
