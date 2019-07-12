@@ -6,7 +6,7 @@ def label = "mypod-${UUID.randomUUID().toString()}"
 //app name will be used to define the k8s name. Value will be set from the helm chart 
 def imName = "mycluster.icp:8500/demo/devops-demo-backend"
 def imTagId = "001"
-def appName = "demoapp"
+def appName = "devops-demo-backend"
 def imNs = "demo"
 
 
@@ -57,7 +57,7 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
 
                 echo "getting Ingress information"
 
-                namespace = "${appName}-prod"
+                //namespace = "${appName}-prod"
 
                 echo "application will be deployed in namespace ${namespace}"
 
@@ -138,12 +138,13 @@ def updateSVC(String namespace, String imTagId, String appName){
 
             sh "sed -i 's|APP_NAME|${appName}|g' service.yaml"
 
-            sh "cat service.yaml"
-
+ 
             def cleanTag = imTagId.replaceAll('\\.','')
 
             sh "sed -i 's|APPSELECTOR|${appName}-${cleanTag}|g' service.yaml"
             sh "kubectl apply -f service.yaml -n ${namespace}"
+
+            sh "cat service.yaml"
 
             echo "service ${appName}-internal updated"
             //TODO remove previous deployment
