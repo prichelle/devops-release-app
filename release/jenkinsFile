@@ -98,7 +98,7 @@ def deployincluster(String imName, String namespace, String appName, String imTa
         echo "setting app color to ${appColor}" 
         sh "sed -i 's|APP_COLOR|${appColor}|g' ./helm/values.yaml"
         // sh "sed -i back 's|APP_PORT|${appPort}|g' ./helm/values.yaml"
-       
+
        container ('kubectl'){
             echo "check that namespace ${namespace} exists"
             currentNsName = sh (
