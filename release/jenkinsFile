@@ -124,12 +124,6 @@ def deployincluster(String imName, String namespace, String appName, String imTa
                 sh "kubectl apply -f ./frontend/frontend-deploy.yaml --namespace ${namespace}"
             }    
 
-            def svcNodePort = sh (
-                            script: "kubectl get svc devops-demo-frontend-external -n ${namespace} -o jsonpath='{ .spec.ports[0].nodePort}'",
-                            returnStdout: true
-                        ).trim()
-           
-            echo "application will be available on port: ${svcNodePort}"         
         }
         
         container('helm'){
@@ -161,7 +155,13 @@ def updateSVC(String namespace, String imTagId, String appName){
             sh "cat service.yaml"
 
             echo "service ${appName}-internal updated"
-            //TODO remove previous deployment
+
+            def svcNodePort = sh (
+                            script: "kubectl get svc devops-demo-frontend-external -n ${namespace} -o jsonpath='{ .spec.ports[0].nodePort}'",
+                            returnStdout: true
+                        ).trim()
+           
+            echo "application will be available on port: ${svcNodePort}"         
         }
     }
 }
