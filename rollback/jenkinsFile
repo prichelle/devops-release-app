@@ -4,9 +4,9 @@ def label = "mypod-${UUID.randomUUID().toString()}"
 //the value corresponds to the tag id used to tag the image in the registry
 //current implementation is to use the commit id
 //app name will be used to define the k8s name. Value will be set from the helm chart 
-def imName = "mycluster.icp:8500/demo/demoapp"
+def imName = "mycluster.icp:8500/demo/devops-demo-backend"
 def imTagId = "001"
-def appName = "demoapp"
+def appName = "devops-demo-backend"
 
 
 //docker registry
@@ -37,8 +37,8 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
             stage ('initialize'){
                 def userInput = input(
                     id: 'userInput', message: 'rollback release?', parameters: [
-                    [$class: 'TextParameterDefinition', defaultValue: 'demoapp', description: 'application name', name: 'name'],
-                    [$class: 'TextParameterDefinition', defaultValue: '0.4.1', description: 'Deployed release', name: 'tag']
+                    [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-backend', description: 'application name', name: 'name'],
+                    [$class: 'TextParameterDefinition', defaultValue: '0.1', description: 'Deployed release', name: 'tag']
                     ]
                 )
 
@@ -77,7 +77,7 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
             def cleanTag = imTagId.replaceAll('\\.','')
 
             svcIdtoRollback = sh (
-                            script: "kubectl get svc -n ${namespace} -l instance=${appName}-internal | awk 'FNR==2{print \$1}'",
+                            script: "kubectl get deploy -n ${namespace} -l instance=${appName}-${cleanTag} | awk 'FNR==2{print \$1}'",
                             returnStdout: true
                         ).trim()
 
@@ -85,7 +85,7 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
 
                 //checking that the service is not exposed
                 appSelector = sh (
-                                    script: "kubectl get svc -n ${namespace} ${svcIdtoRollback} -o jsonpath=\"{.spec.selector.instance-release}\"",
+                                    script: "kubectl get svc -n ${namespace} ${appName}-internal -o jsonpath=\"{.spec.selector.instance-release}\"",
                                     returnStdout: true
                                 ).trim()
 
@@ -95,7 +95,7 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
 
                     sh "sed -i 's|APP_NAME|${appName}|g' service.yaml"
 
-                    sh "cat service.yaml"
+                    sh "cat service.yaml" 
 
                     sh "sed -i 's|APPSELECTOR|${appRelease}|g' service.yaml"
                     sh "kubectl apply -f service.yaml -n ${namespace}"
