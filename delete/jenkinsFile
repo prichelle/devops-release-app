@@ -4,19 +4,13 @@ def label = "mypod-${UUID.randomUUID().toString()}"
 //the value corresponds to the tag id used to tag the image in the registry
 //current implementation is to use the commit id
 //app name will be used to define the k8s name. Value will be set from the helm chart 
-def imName = "mycluster.icp:8500/demo/demoapp"
+def imName = "mycluster.icp:8500/demo/devops-demo-backend"
 def imTagId = "001"
-def appName = "demoapp"
+def appName = "devops-demo-backend"
 
 
 //docker registry
 def registryHost = "mycluster.icp:8500";
-
-//color label and env that has to be set. Default is GREEN but adapted in function of the current deployment
-//If current deployment is GREEN the value will be set to BLUE
-def appColor = "GREEN"
-//current deployement color.
-def currAppColor = "BLUE"
 
 //namespace where the deployemnt shoudl occurs.
 //namespace should be set when deploying the application
@@ -48,9 +42,6 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
                 appName = userInput['name']
 
                 echo "rolling back to application ${appName} version ${imTagId}" 
-
-                //namespace = "${appName}-prod"
-
             }
         }  catch(exe)
         {
@@ -77,20 +68,22 @@ def removeOldDeployment(String namespace, String imTagId, String appName){
         def appSelector
 
         container ('kubectl') {
+            //checking that the service is not exposed
             appSelector = sh (
                                 script: "kubectl get svc -n ${namespace} ${appName}-internal -o jsonpath=\"{.spec.selector.instance-release}\"",
                                 returnStdout: true
                             ).trim()
 
-            def cleanTag = imTagId.replaceAll('\\.','')
-            def appRelease = ${appName}-${cleanTag}
+            def appRelease = "${appName}-${imTagId}"
 
+     
             if (appSelector != appRelease ) {
                 //rollbacl old deployment
 
                container ('helm'){
-                    //deleting old deployment
-                    sh "helm delete --tls --purge ${appRelease}"
+                    def cleanTag = imTagId.replaceAll('\\.','')
+                   //deleting old deployment
+                    sh "helm delete --tls --purge ${appName}-${cleanTag}-${namespace}"
                     echo "old service deleted"
                 }
             }else{

@@ -12,12 +12,6 @@ def appName = "devops-demo-backend"
 //docker registry
 def registryHost = "mycluster.icp:8500";
 
-//color label and env that has to be set. Default is GREEN but adapted in function of the current deployment
-//If current deployment is GREEN the value will be set to BLUE
-def appColor = "GREEN"
-//current deployement color.
-def currAppColor = "BLUE"
-
 //namespace where the deployemnt shoudl occurs.
 //namespace should be set when deploying the application
 def namespace = "demoapp-prod"
@@ -26,10 +20,7 @@ def namespace = "demoapp-prod"
 def ingressName = "mysampleapp".toLowerCase()
 
 podTemplate(label: label, cloud: 'ICP', containers: [
-  containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl', command: 'cat', ttyEnabled: true),
-  containerTemplate(name: 'helm', image: 'lachlanevenson/k8s-helm:v2.12.3', command: 'cat', ttyEnabled: true)
-], 
-volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcert')
+  containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl', command: 'cat', ttyEnabled: true)
 ]) {
     node(label) {
         checkout scm
@@ -76,12 +67,12 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
 
             def cleanTag = imTagId.replaceAll('\\.','')
 
-            svcIdtoRollback = sh (
+            deployApp = sh (
                             script: "kubectl get deploy -n ${namespace} -l instance=${appName}-${cleanTag}-${namespace} | awk 'FNR==2{print \$1}'",
                             returnStdout: true
                         ).trim()
 
-            if (svcIdtoRollback){
+            if (deployApp){
 
                 //checking that the service is not exposed
                 appSelector = sh (
