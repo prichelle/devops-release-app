@@ -38,9 +38,11 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
                 def userInput = input(
                     id: 'userInput', message: 'Let\'s release?', parameters: [
                     [$class: 'TextParameterDefinition', defaultValue: 'demo/devops-demo-backend', description: 'Image to release', name: 'image'],
-                    [$class: 'TextParameterDefinition', defaultValue: '1.0', description: 'Image tag', name: 'tag']
+                    [$class: 'TextParameterDefinition', defaultValue: '1.0', description: 'Image tag', name: 'tag'],
+                    [$class: 'TextParameterDefinition', defaultValue: 'demoapp-prod', description: 'namespace to deploy', name: 'namespace']
                     ]
                 )
+                namespace = userInput['namespace']
 
                 imTagId = userInput['tag']
                 echo "image tag id: ${imTagId}" 
@@ -100,12 +102,12 @@ def deployincluster(String imName, String namespace, String appName, String imTa
         // sh "sed -i back 's|APP_PORT|${appPort}|g' ./helm/values.yaml"
 
        container ('kubectl'){
-            echo "check that namespace ${namespace} exists"
+           echo "check that namespace exists"
             currentNsName = sh (
-                        script: "kubectl get ns | grep ${namespace} | awk '{print \$1}'",
+                        script: "kubectl get ns | grep '^${namespace}' | awk '{print \$1}'",
                         returnStdout: true
                     ).trim()
-            if (currentNsName == null){
+            if (!currentNsName){
                 echo "creating namespace ${namespace}"
                 sh "kubectl create ns ${namespace}"
                 withCredentials([usernamePassword(credentialsId: 'docker-registry', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
@@ -113,6 +115,14 @@ def deployincluster(String imName, String namespace, String appName, String imTa
                 }
                 sh "kubectl create rolebinding -n ${namespace} --clusterrole=ibm-anyuid-clusterrole --group=system:serviceaccounts:${namespace} ibm-anyuid-clusterrole-rolebinding"
             }
+            echo "checking front-end is available"
+            frontendSvc = sh (
+                            script: "kubectl get svc devops-demo-frontend -n ${namespace} | awk '{print \$1}'",
+                            returnStdout: true
+                        ).trim()
+            if (!frontendSvc) {
+                sh "kubectl apply -f ./frontend/frontend-deploy.yaml --namespace ${namespace}"
+            }            
         }
         
         container('helm'){
