@@ -30,9 +30,9 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
         try{
             stage ('initialize'){
                 def userInput = input(
-                    id: 'userInput', message: 'rollback release?', parameters: [
-                    [$class: 'TextParameterDefinition', defaultValue: 'demoapp', description: 'application name', name: 'name'],
-                    [$class: 'TextParameterDefinition', defaultValue: '0.4.1', description: 'Deployed release', name: 'tag']
+                    id: 'userInput', message: 'delete previous release?', parameters: [
+                    [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-backend', description: 'application name', name: 'name'],
+                    [$class: 'TextParameterDefinition', defaultValue: '0.1', description: 'Deployed release', name: 'tag']
                     ]
                 )
 

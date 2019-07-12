@@ -108,6 +108,9 @@ def deployincluster(String imName, String namespace, String appName, String imTa
             if (currentNsName == null){
                 echo "creating namespace ${namespace}"
                 sh "kubectl create ns ${namespace}"
+                withCredentials([usernamePassword(credentialsId: 'docker-registry', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh "kubectl create secret docker-registry sa-registry --docker-server=mycluster.icp:8500 --docker-username=${USERNAME} --docker-password=${PASSWORD} -n ${namespace}"
+                }
                 sh "kubectl create rolebinding -n ${namespace} --clusterrole=ibm-anyuid-clusterrole --group=system:serviceaccounts:${namespace} ibm-anyuid-clusterrole-rolebinding"
             }
         }
