@@ -89,7 +89,6 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
                                     returnStdout: true
                                 ).trim()
 
-                def cleanTag = imTagId.replaceAll('\\.','')
                 def appRelease = ${appName}-${cleanTag}
                 if (appSelector != appRelease ) {
                     //rollbacl old deployment
