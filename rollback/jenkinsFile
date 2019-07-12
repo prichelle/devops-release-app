@@ -89,7 +89,7 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
                                     returnStdout: true
                                 ).trim()
 
-                def appRelease = "${appName}-${cleanTag}"
+                def appRelease = "${appName}-${imTagId}"
                 if (appSelector != appRelease ) {
                     //rollbacl old deployment
 
@@ -97,7 +97,7 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
 
                     sh "cat service.yaml" 
 
-                    sh "sed -i 's|APPSELECTOR|${appRelease}|g' service.yaml"
+                    sh "sed -i 's|APPSELECTOR|${appName}-${imTagId}|g' service.yaml"
                     sh "kubectl apply -f service.yaml -n ${namespace}"
 
                     echo "service ${appName}-internal updated"
