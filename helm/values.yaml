@@ -11,8 +11,9 @@ image:
 
   tag: IM_TAG
   pullPolicy: IfNotPresent
+  imagePullSecrets: sa-registry
 
-imagePullSecrets: ["sa-registry"]
+imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
