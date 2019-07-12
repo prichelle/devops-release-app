@@ -49,7 +49,7 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
 
                 echo "rolling back to application ${appName} version ${imTagId}" 
 
-                namespace = "${appName}-prod"
+                //namespace = "${appName}-prod"
 
             }
         }  catch(exe)
