@@ -77,7 +77,7 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
             def cleanTag = imTagId.replaceAll('\\.','')
 
             svcIdtoRollback = sh (
-                            script: "kubectl get deploy -n ${namespace} -l instance=${appName}-${cleanTag} | awk 'FNR==2{print \$1}'",
+                            script: "kubectl get deploy -n ${namespace} -l instance=${appName}-${cleanTag}-${namespace} | awk 'FNR==2{print \$1}'",
                             returnStdout: true
                         ).trim()
 
