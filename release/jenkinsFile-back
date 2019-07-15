@@ -4,9 +4,9 @@ def label = "mypod-${UUID.randomUUID().toString()}"
 //the value corresponds to the tag id used to tag the image in the registry
 //current implementation is to use the commit id
 //app name will be used to define the k8s name. Value will be set from the helm chart 
-def imName = "mycluster.icp:8500/demo/devops-demo-frontend"
+def imName = "mycluster.icp:8500/demo/devops-demo-backend"
 def imTagId = "001"
-def appName = "devops-demo-frontend"
+def appName = "devops-demo-backend"
 def imNs = "demo"
 
 
@@ -37,7 +37,7 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
             stage ('initialize'){
                 def userInput = input(
                     id: 'userInput', message: 'Let\'s release?', parameters: [
-                    [$class: 'TextParameterDefinition', defaultValue: 'demo/devops-demo-frontend', description: 'Image to release', name: 'image'],
+                    [$class: 'TextParameterDefinition', defaultValue: 'demo/devops-demo-backend', description: 'Image to release', name: 'image'],
                     [$class: 'TextParameterDefinition', defaultValue: '1.0', description: 'Image tag', name: 'tag'],
                     [$class: 'TextParameterDefinition', defaultValue: 'demoapp-prod', description: 'namespace to deploy', name: 'namespace']
                     ]
@@ -115,14 +115,14 @@ def deployincluster(String imName, String namespace, String appName, String imTa
                 }
                 sh "kubectl create rolebinding -n ${namespace} --clusterrole=ibm-anyuid-clusterrole --group=system:serviceaccounts:${namespace} ibm-anyuid-clusterrole-rolebinding"
             }
-            echo "checking backend-end is available"
+            echo "checking front-end is available"
             def frontendSvc = sh (
-                            script: "kubectl get svc devops-demo-backend-internal -n ${namespace} | awk '{print \$1}'",
+                            script: "kubectl get svc devops-demo-frontend -n ${namespace} | awk '{print \$1}'",
                             returnStdout: true
                         ).trim()
             if (!frontendSvc) {
-                sh "kubectl apply -f ./k8s/backend-deploy.yaml --namespace ${namespace}"
-            }
+                sh "kubectl apply -f ./frontend/frontend-deploy.yaml --namespace ${namespace}"
+            }    
 
         }
         
@@ -141,18 +141,18 @@ def updateSVC(String namespace, String imTagId, String appName){
     stage ('updateSVC'){
 
         container ('kubectl') {
-             echo "initializing service yaml file"   
+            echo "initializing service yaml file"   
 
-            // updating svc
-            echo "service in namespace ${namespace}: ${appName}-external will be updated for version ${imTagId}"
 
-            sh "sed -i 's|APP_NAME|${appName}|g' ./k8s/service.yaml"
+            echo "service in namespace ${namespace}: ${appName}-internal will be updated for version ${imTagId}"
 
-            sh "sed -i 's|APPSELECTOR|${appName}-${imTagId}|g' ./k8s/service.yaml"
+            sh "sed -i 's|APP_NAME|${appName}|g' service.yaml"
 
-            sh "cat ./k8s/service.yaml"
+ 
+            sh "sed -i 's|APPSELECTOR|${appName}-${imTagId}|g' service.yaml"
+            sh "kubectl apply -f service.yaml -n ${namespace}"
 
-            sh "kubectl apply -f ./k8s/service.yaml -n ${namespace}"
+            sh "cat service.yaml"
 
             echo "service ${appName}-internal updated"
 

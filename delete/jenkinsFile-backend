@@ -4,9 +4,9 @@ def label = "mypod-${UUID.randomUUID().toString()}"
 //the value corresponds to the tag id used to tag the image in the registry
 //current implementation is to use the commit id
 //app name will be used to define the k8s name. Value will be set from the helm chart 
-def imName = "mycluster.icp:8500/demo/devops-demo-frontend"
+def imName = "mycluster.icp:8500/demo/devops-demo-backend"
 def imTagId = "001"
-def appName = "devops-demo-frontend"
+def appName = "devops-demo-backend"
 
 
 //docker registry
@@ -31,7 +31,7 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
             stage ('initialize'){
                 def userInput = input(
                     id: 'userInput', message: 'delete previous release?', parameters: [
-                    [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-frontend', description: 'application name', name: 'name'],
+                    [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-backend', description: 'application name', name: 'name'],
                     [$class: 'TextParameterDefinition', defaultValue: '0.1', description: 'Deployed release', name: 'tag']
                     ]
                 )
@@ -70,7 +70,7 @@ def removeOldDeployment(String namespace, String imTagId, String appName){
         container ('kubectl') {
             //checking that the service is not exposed
             appSelector = sh (
-                                script: "kubectl get svc -n ${namespace} ${appName}-external -o jsonpath=\"{.spec.selector.instance-release}\"",
+                                script: "kubectl get svc -n ${namespace} ${appName}-internal -o jsonpath=\"{.spec.selector.instance-release}\"",
                                 returnStdout: true
                             ).trim()
 
