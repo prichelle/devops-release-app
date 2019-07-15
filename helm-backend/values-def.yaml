@@ -5,28 +5,23 @@
 replicaCount: 1
 
 image:
-  repository: IM_URI
+  repository: mycluster.icp:8500/demo/devops-demo-app
     # localhost:80/app/helloapp
     # 
 
-  tag: IM_TAG
+  tag: 0.4
   pullPolicy: IfNotPresent
-  imagePullSecrets: sa-registry
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
 labels:
-  appcolor: APP_COLOR
+  appcolor: BLUE
 
 service:
   type: ClusterIP
-  port: 8080
-
-backend:
   port: 9080
-  host: devops-demo-backend-internal
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
