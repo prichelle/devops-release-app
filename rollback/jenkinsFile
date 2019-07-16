@@ -40,7 +40,7 @@ podTemplate(label: label, cloud: 'ICP', containers: [
                           def labels = it.tokenize(',')
                           labels.each {
                               def polabel = it.tokenize('=')
-                              def labelName = polabels[0]
+                              def labelName = polabel[0]
                               echo "label: ${labelName}"
                               releasePo << it
                           }
