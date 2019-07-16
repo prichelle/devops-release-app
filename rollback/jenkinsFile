@@ -34,15 +34,18 @@ podTemplate(label: label, cloud: 'ICP', containers: [
                                     returnStdout: true
                                 ).trim()
                       def listext = poList.tokenize()
-                      listext = listext.tokenize(',')
-                      
+
                       def releasePo
                       listext.each {
-                        def labels = it.tokenize('=')
-                        def labelName = labels[0]
-                        echo "label: ${labelName}"
-                        releasePo << it
+                          def labels = it.tokenize(',')
+                          labels.each {
+                              def label = it.tokenize('=')
+                              def labelName = labels[0]
+                              echo "label: ${labelName}"
+                              releasePo << it
+                          }
                       }
+                      
                       selectedSvc = input( id: 'userInputsvcList', message: 'Choose deployment to rollback to', 
                             parameters: [ 
                                 [$class: 'ChoiceParameterDefinition', choices: releasePo, description: 'Properties', name: 'prop'] 
