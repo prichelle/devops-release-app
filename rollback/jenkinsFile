@@ -29,15 +29,16 @@ podTemplate(label: label, cloud: 'ICP', containers: [
 
                 container('kubectl'){
                       def svcList = sh (
-                                    script: "kubectl get deploy -n ${namespace} | awk '{print \$1}'",
+                                    script: "kubectl get deploy -n ${namespace} | grep frontend | awk 'FNR>1{print \$1}'",
                                     returnStdout: true
                                 ).trim()
-                      def selectedProperty = input( id: 'userInputList', message: 'Choose properties file', 
+                      def selectedSvc = input( id: 'userInputsvcList', message: 'Choose deployment to rollback to', 
                             parameters: [ 
                                 [$class: 'ChoiceParameterDefinition', choices: svcList, description: 'Properties', name: 'prop'] 
                             ]
                         )
                 }
+                echo "select instance: ${selectedSvc}" 
                 def userInput = input(
                     id: 'userInput', message: 'rollback release?', parameters: [
                     [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-frontend', description: 'application name', name: 'name'],
@@ -80,7 +81,7 @@ def rollbackToPrevious(String namespace, String imTagId, String appName){
             def cleanTag = imTagId.replaceAll('\\.','')
 
             deployApp = sh (
-                            script: "kubectl get deploy -n ${namespace} -l instance=${appName}-${cleanTag}-${namespace} | awk 'FNR==2{print \$1}'",
+                            script: "kubectl get deploy -n ${namespace} -l instance=${appName}-${cleanTag}-${namespace} | | awk 'FNR==2{print \$1}'",
                             returnStdout: true
                         ).trim()
 
