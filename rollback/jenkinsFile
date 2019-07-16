@@ -27,14 +27,25 @@ podTemplate(label: label, cloud: 'ICP', containers: [
         try{
             stage ('initialize'){
 
+                def selectedSvc 
                 container('kubectl'){
-                      def svcList = sh (
-                                    script: "kubectl get deploy -n ${namespace} | awk 'FNR>1{print \$1}'  | grep frontend",
+                      def poList = sh (
+                                    script: "kubectl get po -n ${namespace} --show-labels | awk 'FNR>1{print \$6}'  | grep frontend",
                                     returnStdout: true
                                 ).trim()
-                      def selectedSvc = input( id: 'userInputsvcList', message: 'Choose deployment to rollback to', 
+                      def listext = poList.tokenize()
+                      listext = listext.tokenize(',')
+                      
+                      def releasePo
+                      listext.each {
+                        def labels = it.tokenize('=')
+                        def labelName = labels[0]
+                        echo "label: ${labelName}"
+                        releasePo << it
+                      }
+                      selectedSvc = input( id: 'userInputsvcList', message: 'Choose deployment to rollback to', 
                             parameters: [ 
-                                [$class: 'ChoiceParameterDefinition', choices: svcList, description: 'Properties', name: 'prop'] 
+                                [$class: 'ChoiceParameterDefinition', choices: releasePo, description: 'Properties', name: 'prop'] 
                             ]
                         )
                       echo "select instance: ${selectedSvc}" 
