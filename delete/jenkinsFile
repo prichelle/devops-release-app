@@ -76,7 +76,7 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
                     appName = selectedSvc.substring(0,selectedSvc.indexOf('-' + imTagId))
                     echo "app name: ${appName}"
 
-
+                }
 
 
 /*
@@ -93,7 +93,7 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
 
                 appName = userInput['name']
  */
-                echo "deleting application ${appName} version ${imTagId}" 
+                echo "deleting `application ${appName} version ${imTagId}" 
                
             }
         }  catch(exe)
