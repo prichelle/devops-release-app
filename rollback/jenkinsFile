@@ -39,7 +39,7 @@ podTemplate(label: label, cloud: 'ICP', containers: [
                         )
                       echo "select instance: ${selectedSvc}" 
 
-                      svcList.removeAll { it.equalsIgnoreCase("devops-demo-frontend-09-demoapp-prod")}
+                      //svcList.removeAll { it.equalsIgnoreCase("devops-demo-frontend-09-demoapp-prod")}
 
                       svcList.each { echo "list ${it}"}
                 }
