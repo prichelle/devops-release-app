@@ -62,7 +62,7 @@ podTemplate(label: label, cloud: 'ICP', containers: [
                           //def selectedSvcList = selectedSvc.tokenize('-')
                     imTagId = selectedSvc.tokenize('-').last()
                     echo "image tag id: ${imTagId}" 
-                    appName = selectedSvc.substring(0,selectedSvc.indexOf('-' + tag))
+                    appName = selectedSvc.substring(0,selectedSvc.indexOf('-' + imTagId))
                     echo "app name: ${appName}"
 
                 }
