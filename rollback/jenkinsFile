@@ -37,8 +37,14 @@ podTemplate(label: label, cloud: 'ICP', containers: [
                                 [$class: 'ChoiceParameterDefinition', choices: svcList, description: 'Properties', name: 'prop'] 
                             ]
                         )
+                      echo "select instance: ${selectedSvc}" 
+
+                      svcList.removeAll { it.equalsIgnoreCase("devops-demo-frontend-09-demoapp-prod")}
+
+                      svcList.each { echo "list ${it}"}
                 }
-                echo "select instance: ${selectedSvc}" 
+
+
                 def userInput = input(
                     id: 'userInput', message: 'rollback release?', parameters: [
                     [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-frontend', description: 'application name', name: 'name'],
