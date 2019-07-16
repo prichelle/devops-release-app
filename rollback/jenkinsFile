@@ -26,6 +26,18 @@ podTemplate(label: label, cloud: 'ICP', containers: [
         checkout scm
         try{
             stage ('initialize'){
+
+                container('kubeclt'){
+                      def svcList = sh (
+                                    script: "kubectl get deploy -n ${namespace} | awk '{print \$1}'",
+                                    returnStdout: true
+                                ).trim()
+                      def selectedProperty = input( id: 'userInputList', message: 'Choose properties file', 
+                            parameters: [ 
+                                [$class: 'ChoiceParameterDefinition', choices: svcList, description: 'Properties', name: 'prop'] 
+                            ]
+                        )
+                }
                 def userInput = input(
                     id: 'userInput', message: 'rollback release?', parameters: [
                     [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-frontend', description: 'application name', name: 'name'],
