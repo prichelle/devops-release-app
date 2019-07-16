@@ -35,9 +35,11 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
         checkout scm
         try{
             stage ('initialize'){
+
+                echo "test ${imageName} ${imageTag} ${envNamespace}"
                 def userInput = input(
                     id: 'userInput', message: 'Let\'s release?', parameters: [
-                    [$class: 'TextParameterDefinition', defaultValue: 'demo/devops-demo-frontend', description: 'Image to release', name: 'image'],
+                    [$class: 'TextParameterDefinition', defaultValue: 'demo/devops-demo-frontend', description: 'Image name to release', name: 'image'],
                     [$class: 'TextParameterDefinition', defaultValue: '1.0', description: 'Image tag', name: 'tag'],
                     [$class: 'TextParameterDefinition', defaultValue: 'demoapp-prod', description: 'namespace to deploy', name: 'namespace']
                     ]
