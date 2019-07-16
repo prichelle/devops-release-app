@@ -29,6 +29,58 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
         checkout scm
         try{
             stage ('initialize'){
+
+
+                def selectedSvc 
+                container('kubectl'){
+                      def poList = sh (
+                                    script: "kubectl get po -n ${namespace} --show-labels | awk 'FNR>1{print \$6}'  | grep frontend",
+                                    returnStdout: true
+                                ).trim()
+                      def listext = poList.tokenize()
+
+                        //checking that the service is not exposed
+                      def appSelector = sh (
+                                            script: "kubectl get svc -n ${namespace} ${appName}-external -o jsonpath=\"{.spec.selector.instance-release}\"",
+                                            returnStdout: true
+                                        ).trim()
+
+                     
+                     def releasePo = []
+                     //def input = "color=PROD,instance-release=devops-demo-frontend-0.5,name=devops-demo-frontend,pod-template-hash=7d56697b5c"
+                     
+                     poList.tokenize().each{
+                          def labels = it.tokenize(',')
+                          def lbReleaseName 
+                          labels.each {
+                              def polabel = it.tokenize('=')
+                              def labelName = polabel[0]
+                              //echo "label: ${labelName}"
+                              if (labelName == "instance-release")
+                                lbReleaseName = polabel[1]
+                          }
+                          echo "release name: ${lbReleaseName}" 
+                          if (lbReleaseName != appSelector)
+                            releasePo << lbReleaseName
+                     }
+                      selectedSvc = input( id: 'userInputsvcList', message: 'Choose deployment to rollback to', 
+                            parameters: [ 
+                                [$class: 'ChoiceParameterDefinition', choices: releasePo, description: 'Properties', name: 'prop'] 
+                            ]
+                        )
+
+                    echo "select instance: ${selectedSvc}" 
+                          //def selectedSvcList = selectedSvc.tokenize('-')
+                    imTagId = selectedSvc.tokenize('-').last()
+                    echo "image tag id: ${imTagId}" 
+                    appName = selectedSvc.substring(0,selectedSvc.indexOf('-' + imTagId))
+                    echo "app name: ${appName}"
+
+
+
+
+/*
+
                 def userInput = input(
                     id: 'userInput', message: 'delete previous release?', parameters: [
                     [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-frontend', description: 'application name', name: 'name'],
@@ -40,8 +92,9 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
                 echo "image tag id: ${imTagId}" 
 
                 appName = userInput['name']
-
-                echo "rolling back to application ${appName} version ${imTagId}" 
+ */
+                echo "deleting application ${appName} version ${imTagId}" 
+               
             }
         }  catch(exe)
         {
