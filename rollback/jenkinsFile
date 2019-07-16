@@ -42,16 +42,12 @@ podTemplate(label: label, cloud: 'ICP', containers: [
                      poList.tokenize().each{
                           def labels = it.tokenize(',')
                           def lbReleaseName 
-                          def lbAppName
                           labels.each {
                               def polabel = it.tokenize('=')
                               def labelName = polabel[0]
+                              //echo "label: ${labelName}"
                               if (labelName == "instance-release")
                                 lbReleaseName = polabel[1]
-                              if (labelName == "name")
-                                lbAppName = polabel[1]
-                              echo "label: ${labelName}"
-                              
                           }
                           echo "release name: ${lbReleaseName}" 
                           releasePo << lbReleaseName
@@ -62,19 +58,16 @@ podTemplate(label: label, cloud: 'ICP', containers: [
                             ]
                         )
 
-                      echo "select instance: ${selectedSvc}" 
+                    echo "select instance: ${selectedSvc}" 
                           //def selectedSvcList = selectedSvc.tokenize('-')
-                          def tag = selectedSvc.tokenize('-').last()
-                          echo "tag: ${tag}" 
-                          def poAppName = selectedSvc.substring(0,selectedSvc.indexOf('-' + tag))
-                          echo "app name: ${poAppName}"
+                    imTagId = selectedSvc.tokenize('-').last()
+                    echo "image tag id: ${imTagId}" 
+                    appName = selectedSvc.substring(0,selectedSvc.indexOf('-' + tag))
+                    echo "app name: ${appName}"
 
-                      //svcList.removeAll { it.equalsIgnoreCase("devops-demo-frontend-09-demoapp-prod")}
-
-                      //svcList.each { echo "list ${it}"}
                 }
 
-
+                /*
                 def userInput = input(
                     id: 'userInput', message: 'rollback release?', parameters: [
                     [$class: 'TextParameterDefinition', defaultValue: 'devops-demo-frontend', description: 'application name', name: 'name'],
@@ -83,10 +76,9 @@ podTemplate(label: label, cloud: 'ICP', containers: [
                 )
 
                 imTagId = userInput['tag']
-                echo "image tag id: ${imTagId}" 
 
                 appName = userInput['name']
-
+                */
                 echo "rolling back to application ${appName} version ${imTagId}" 
 
                 //namespace = "${appName}-prod"
