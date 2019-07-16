@@ -27,7 +27,7 @@ podTemplate(label: label, cloud: 'ICP', containers: [
         try{
             stage ('initialize'){
 
-                container('kubeclt'){
+                container('kubectl'){
                       def svcList = sh (
                                     script: "kubectl get deploy -n ${namespace} | awk '{print \$1}'",
                                     returnStdout: true
