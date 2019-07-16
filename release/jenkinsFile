@@ -37,6 +37,7 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
             stage ('initialize'){
 
                 echo "test ${imageName} ${imageTag} ${envNamespace}"
+                /*
                 def userInput = input(
                     id: 'userInput', message: 'Let\'s release?', parameters: [
                     [$class: 'TextParameterDefinition', defaultValue: 'demo/devops-demo-frontend', description: 'Image name to release', name: 'image'],
@@ -52,10 +53,16 @@ volumes: [ secretVolume( mountPath: '/home/jenkins/.helm' , secretName: 'helmcer
                 //echo "override image tag id to 0.4 to test"
                 //imTagId = "0.4.2" //v2
 
+                */
+                namespace = envNamespace
+                imTagId = imageTag
+                imName = "mycluster.icp:8500/" +  imageName
+
                 appName = sh (
                                     script: "basename ${imName}",
                                     returnStdout: true
                                 ).trim()
+
 
                 echo "deploying image ${imName} as application ${appName}" 
 
